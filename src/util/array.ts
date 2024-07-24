@@ -20,15 +20,15 @@ function range(start: number = 0, end: number, step: number = 1): number[] {
   return result;
 }
 
-function enumerate<T>(list: T[]): Tuple2<number, T>[] {
+function enumerate<T>(list: T[]): [number, T][] {
   if (list.length === 0) {
     return [];
   }
 
-  const result: Tuple2<number, T>[] = [];
+  const result: [number, T][] = [];
 
   for (let i = 0; i < list.length; i++) {
-    result.push(new Tuple2(i, list[i]));
+    result.push([i, list[i]]);
   }
 
   return result;
