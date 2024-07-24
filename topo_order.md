@@ -1,0 +1,46 @@
+- [x] src/constants.dart
+- [x] src/util/array.dart
+- [x] src/util/rate_functions.dart
+- [ ] src/util/events/event.dart
+- [ ] src/renderer/preset.dart
+- [ ] src/util/extensions.dart
+- [x] src/util/math_functions.dart
+- [x] src/util/vector.dart
+- [ ] src/util/events/event_listener.dart
+- [ ] src/util/events/key_events.dart
+- [ ] src/util/js_util.dart
+- [x] src/util/complex.dart
+- [ ] src/util/events/mouse_events.dart
+- [x] src/util/space_ops.dart
+- [ ] src/util/events/event_dispatcher.dart
+- [x] src/util/bezier.dart
+- [x] src/util/color.dart
+- [x] src/util/paths.dart
+- [x] src/mobject/types/mobject.dart
+- [x] src/animation/animation.dart
+- [ ] src/mobject/types/interactive_mobject.dart
+- [ ] src/mobject/types/vectorized_mobject.dart
+- [ ] src/animation/update.dart
+- [ ] src/animation/creation.dart
+- [ ] src/camera/camera.dart
+- [ ] src/mobject/functions.dart
+- [ ] src/mobject/geometry.dart
+- [ ] src/renderer/abstract_renderer.dart
+- [ ] src/mobject/coordinate_systems.dart
+- [ ] src/mobject/shape_matchers.dart
+- [ ] src/mobject/svg/svg_mobject.dart
+- [ ] src/display/abstract_display.dart
+- [ ] src/renderer/empty_renderer.dart
+- [ ] src/mobject/svg/tex_mobject.dart
+- [ ] src/display/abstract_html_display.dart
+- [x] src/scene/scene.dart
+- [ ] src/display/empty_display.dart
+- [ ] src/display/canvas_2d_display.dart
+- [x] src/animation/composition.dart
+- [ ] src/animation/transform.dart
+- [ ] src/display/recorded_canvas_2d_display.dart
+- [ ] src/renderer/canvas_2d_renderer.dart
+- [ ] src/animation/fading.dart
+- [ ] src/animation/indication.dart
+- [ ] /manim_html.dart
+- [ ] /manim.dart
