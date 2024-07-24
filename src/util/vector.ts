@@ -119,9 +119,9 @@ export class Vector3 {
 
   toMArray(row: boolean = false): MArray {
     if (row) {
-      return new MArray({ values: [[this.x, this.y, this.z]] });
+      return new MArray([[this.x, this.y, this.z]]);
     } else {
-      return new MArray({ values: [[this.x], [this.y], [this.z]] });
+      return new MArray([[this.x], [this.y], [this.z]]);
     }
   }
 

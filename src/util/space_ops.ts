@@ -8,13 +8,7 @@ export class MArray {
   values: number[][];
   shape: Tuple2<number, number>;
 
-  constructor({
-    values,
-    shape,
-  }: {
-    values: number[][];
-    shape?: Tuple2<number, number>;
-  }) {
+  constructor(values: number[][], shape?: Tuple2<number, number>) {
     this.values = values;
     this.shape =
       shape ||
@@ -31,10 +25,10 @@ export class MArray {
   }
 
   static fromVectorList(list: Vector3[]): MArray {
-    return new MArray({
-      values: list.map((vec) => vec.toArray()),
-      shape: new Tuple2(list.length, 3),
-    });
+    return new MArray(
+      list.map((vec) => vec.toArray()),
+      new Tuple2(list.length, 3)
+    );
   }
 
   static fromValue(val: number, shape: Tuple2<number, number>): MArray {
@@ -45,7 +39,7 @@ export class MArray {
       .fill(0)
       .map(() => Array(n).fill(val));
 
-    return new MArray({ values, shape });
+    return new MArray(values, shape);
   }
 
   add(other: MArray | number): MArray {
@@ -113,7 +107,7 @@ export class MArray {
       row.map((value, j) => mappingFunc(value, new Tuple2(i, j)))
     );
 
-    return new MArray({ values: newValues, shape: this.shape });
+    return new MArray(newValues, this.shape);
   }
 
   matMul(other: MArray): MArray {
@@ -156,7 +150,7 @@ export class MArray {
           .map((_, j) => (i === j ? 1 : 0))
       );
     const shape = new Tuple2(size, size);
-    return new MArray({ values, shape });
+    return new MArray(values, shape);
   }
 
   static nonSquareIdentity({
@@ -174,7 +168,7 @@ export class MArray {
           .fill(0)
           .map((_, j) => (i === j ? 1 : 0))
       );
-    return new MArray({ values });
+    return new MArray(values);
   }
 
   static empty(): MArray {
@@ -349,14 +343,14 @@ export class MArray {
       .filter((_, index) => index !== i)
       .map((row) => row.filter((_, index) => index !== j));
 
-    return new MArray({ values, shape });
+    return new MArray(values, shape);
   }
 
   transpose(): MArray {
     const newValues = this.values[0].map((_, colIndex) =>
       this.values.map((row) => row[colIndex])
     );
-    return new MArray({ values: newValues });
+    return new MArray(newValues);
   }
 
   getColumnAsVector(j: number): Vector3 {
@@ -395,13 +389,11 @@ export class MArray {
     }
     const a = this.flat();
     const b = other.flat();
-    return new MArray({
-      values: [
-        [a[1] * b[2] - a[2] * b[1]],
-        [a[2] * b[0] - a[0] * b[2]],
-        [a[0] * b[1] - a[1] * b[0]],
-      ],
-    });
+    return new MArray([
+      [a[1] * b[2] - a[2] * b[1]],
+      [a[2] * b[0] - a[0] * b[2]],
+      [a[0] * b[1] - a[1] * b[0]],
+    ]);
   }
 
   norm(): number {
@@ -449,7 +441,7 @@ export class MArray {
       throw new Error('Cannot convert to Quaternion: matrix must be 4x1');
     }
     const [x, y, z, w] = this.flat();
-    return new MArray({ values: [[x], [y], [z], [w]] });
+    return new MArray([[x], [y], [z], [w]]);
   }
 
   lerp(other: MArray, alpha: number): MArray {
@@ -472,13 +464,11 @@ export function rotationMatrix(angle: number, axis: Vector3): MArray {
 }
 
 export function rotationAboutZ(angle: number): MArray {
-  return new MArray({
-    values: [
-      [Math.cos(angle), -Math.sin(angle), 0],
-      [Math.sin(angle), Math.cos(angle), 0],
-      [0, 0, 1],
-    ],
-  });
+  return new MArray([
+    [Math.cos(angle), -Math.sin(angle), 0],
+    [Math.sin(angle), Math.cos(angle), 0],
+    [0, 0, 1],
+  ]);
 }
 
 export function zToVector(vector: Vector3): MArray {
@@ -500,13 +490,11 @@ export function zToVector(vector: Vector3): MArray {
     }
   }
 
-  const phiDown = new MArray({
-    values: [
-      [Math.cos(phi), 0, Math.sin(phi)],
-      [0, 1, 0],
-      [-Math.sin(phi), 0, Math.cos(phi)],
-    ],
-  });
+  const phiDown = new MArray([
+    [Math.cos(phi), 0, Math.sin(phi)],
+    [0, 1, 0],
+    [-Math.sin(phi), 0, Math.cos(phi)],
+  ]);
 
   return rotationAboutZ(theta).matMul(phiDown);
 }
@@ -525,25 +513,21 @@ export function quaternionMultiplication(q1: MArray, q2: MArray): MArray {
   const [x1, y1, z1, w1] = q1Values;
   const [x2, y2, z2, w2] = q2Values;
 
-  return new MArray({
-    values: [
-      [w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2],
-      [w1 * y2 + y1 * w2 + z1 * x2 - x1 * z2],
-      [w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2],
-      [w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2],
-    ],
-  });
+  return new MArray([
+    [w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2],
+    [w1 * y2 + y1 * w2 + z1 * x2 - x1 * z2],
+    [w1 * z2 + z1 * w2 + x1 * y2 - y1 * x2],
+    [w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2],
+  ]);
 }
 
 export function quaternionFromAngleAxis(angle: number, axis: Vector3): MArray {
   const v = axis.normalize().scale(Math.sin(angle / 2));
 
-  return new MArray({
-    values: [
-      ...v.toArray().map((component) => [component]),
-      [Math.cos(angle / 2)],
-    ],
-  });
+  return new MArray([
+    ...v.toArray().map((component) => [component]),
+    [Math.cos(angle / 2)],
+  ]);
 }
 
 export function quaternionConjugate(quat: MArray): MArray {
@@ -551,11 +535,7 @@ export function quaternionConjugate(quat: MArray): MArray {
     throw new Error('Quaternion must be a 4x1 column vector');
   }
 
-  return quat.multiply(
-    new MArray({
-      values: [[-1], [-1], [-1], [1]],
-    })
-  );
+  return quat.multiply(new MArray([[-1], [-1], [-1], [1]]));
 }
 
 export function compassDirections({

@@ -7,8 +7,8 @@ import { MArray } from './space_ops';
 type PathFunc = (a: Vector3[], b: Vector3[], alpha: number) => Vector3[];
 
 function straightPath(a: Vector3[], b: Vector3[], alpha: number): Vector3[] {
-  const arrayA = new MArray({ values: a.map((v) => v.toArray()) });
-  const arrayB = new MArray({ values: b.map((v) => v.toArray()) });
+  const arrayA = new MArray(a.map((v) => v.toArray()));
+  const arrayB = new MArray(b.map((v) => v.toArray()));
   const interpolatedArray = interpolate(arrayA, arrayB, alpha);
   return interpolatedArray
     .getValues()
@@ -33,8 +33,8 @@ function pathAlongArc(angle: number, axis: Vector3 = OUT): PathFunc {
     endPoints: Vector3[],
     alpha: number
   ): Vector3[] => {
-    const start = new MArray({ values: startPoints.map((v) => v.toArray()) });
-    const end = new MArray({ values: endPoints.map((v) => v.toArray()) });
+    const start = new MArray(startPoints.map((v) => v.toArray()));
+    const end = new MArray(endPoints.map((v) => v.toArray()));
     const vects = start.subtract(end);
     let centers = start.add(vects.divide(2));
 
@@ -43,9 +43,7 @@ function pathAlongArc(angle: number, axis: Vector3 = OUT): PathFunc {
         .getValues()
         .map((v) => new Vector3(v[0], v[1], v[2]));
       const crossProducts = vectsList.map((vec) => axis.cross(vec.divide(1)));
-      const crossArray = new MArray({
-        values: crossProducts.map((v) => v.toArray()),
-      });
+      const crossArray = new MArray(crossProducts.map((v) => v.toArray()));
       centers = centers.add(crossArray.divide(Math.tan(angle / 2)));
     }
 

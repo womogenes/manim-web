@@ -63,11 +63,9 @@ function argmin(array: number[]): number {
 }
 
 function linspace(start: number, end: number, count: number): MArray {
-  return new MArray({
-    values: range(0, count).map((i) => [
-      interpolate(start, end, i / (count - 1)),
-    ]),
-  });
+  return new MArray(
+    range(0, count).map((i) => [interpolate(start, end, i / (count - 1))])
+  );
 }
 
 function arange({
@@ -84,7 +82,7 @@ function arange({
   const _range = range(0, Math.ceil((end - start) / step));
   const result = _range.map((x) => [x * step + start]);
 
-  return new MArray({ values: result });
+  return new MArray(result);
 }
 
 function unique<T>(nonUnique: T[]): T[] {

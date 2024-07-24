@@ -1,21 +1,21 @@
-import { Color, WHITE, TRANSPARENT } from '../../util/color';
-import { Vector3, ORIGIN } from '../../util/vector';
+import { Color } from '../../util/color';
+import { Vector3 } from '../../util/vector';
+import { WHITE, TRANSPARENT, ORIGIN } from '../../constants';
 import { Mobject } from './mobject';
-import { VGroup } from './vgroup';
 import {
   linspace,
   range,
   sum,
   makeEven,
   stretchListToLength,
-  withoutFirst,
 } from '../../util/array';
 import {
   partialBezierPoints,
-  getCubicBezierTuplesFromPoints,
   interpolate,
   bezier,
   integerInterpolate,
+  interpolateValue,
+  getSmoothHandlePoints,
 } from '../../util/bezier';
 import { DEFAULT_STROKE_WIDTH, OUT, RIGHT, UP } from '../../constants';
 import { MArray } from '../../util/space_ops';
@@ -113,9 +113,7 @@ export class VMobject extends Mobject {
         colors = stretchListToLength(colors, this.fillColors.length);
       }
 
-      this.fillColors = range({ start: 0, end: this.fillColors.length }).map(
-        (i) => colors[i]
-      );
+      this.fillColors = range(0, this.fillColors.length).map((i) => colors[i]);
     }
   }
 
@@ -162,7 +160,7 @@ export class VMobject extends Mobject {
           );
         }
 
-        this.strokeColors = range(this.strokeColors!.length).map(
+        this.strokeColors = range(0, this.strokeColors!.length).map(
           (i) => colors[i]
         );
       } else {
@@ -180,7 +178,7 @@ export class VMobject extends Mobject {
           );
         }
 
-        this.strokeColors = range(this.strokeColors.length).map(
+        this.strokeColors = range(0, this.strokeColors.length).map(
           (i) => colors[i]
         );
       }
@@ -226,9 +224,9 @@ export class VMobject extends Mobject {
     }
   }
 
-  setColor({ color, family = true }: { color: Color; family?: boolean }): void {
-    this.setFill({ color, family });
-    this.setStroke({ color, family });
+  setColor(color: Color, family: boolean = true): void {
+    this.setFill({ colors: [color], family });
+    this.setStroke({ colors: [color], family });
     super.setColor({ color, family });
   }
 
@@ -255,22 +253,21 @@ export class VMobject extends Mobject {
       if (submobs1.length === 0) {
         return;
       } else if (submobs2.length === 0) {
-        submobs2 = [vmob];
+        submobs2 = [vmob as unknown as Mobject];
       }
 
       submobs1 = submobs1.filter((element) => element instanceof VMobject);
       submobs2 = submobs2.filter((element) => element instanceof VMobject);
 
       for (const [sm1, sm2] of makeEven(submobs1, submobs2)) {
-        (sm1 as VMobject).matchStyle(sm2 as VMobject, { family: true });
+        (sm1 as unknown as VMobject).matchStyle(sm2 as unknown as VMobject, {
+          family: true,
+        });
       }
     }
   }
 
-  fade({
-    darkness = 0.5,
-    family = true,
-  }: { darkness?: number; family?: boolean } = {}): void {
+  fade(darkness: number = 0.5, family: boolean = true): void {
     const factor = 1 - darkness;
 
     this.setFill({
@@ -292,7 +289,7 @@ export class VMobject extends Mobject {
       family: true,
     });
 
-    super.fade({ darkness, family });
+    super.fade(darkness, family);
   }
 
   getFillColor(): Color {
@@ -334,7 +331,7 @@ export class VMobject extends Mobject {
     }).transpose();
 
     const offset = direction.matMul(bases);
-    return [c.sub(offset), c.add(offset)];
+    return [c.subtract(offset), c.add(offset)];
   }
 
   setPoints(points: Vector3[]): void {
@@ -404,9 +401,9 @@ export class VMobject extends Mobject {
   addLineTo(pt: Vector3): void {
     const nppc = this.nPointsPerCurve; // 4
     const lastPoint = this.getLastPoint();
-    const data = linspace(0, 1, nppc).map((alpha) =>
-      interpolate(lastPoint, pt, alpha)
-    );
+    const data = linspace(0, 1, nppc)
+      .flat()
+      .map((alpha) => interpolateValue(lastPoint, pt, alpha));
 
     this.addCubicBezierCurveTo(data[1], data[2], data[3]);
   }
@@ -455,6 +452,10 @@ export class VMobject extends Mobject {
 
   hasNewPathStarted(): boolean {
     return this.getNumPoints() % this.nPointsPerCurve === 1;
+  }
+
+  getLastPoint(): Vector3 {
+    return this.points[this.points.length - 1];
   }
 
   isClosed(): boolean {
@@ -511,7 +512,7 @@ export class VMobject extends Mobject {
         let h1: Vector3[], h2: Vector3[];
 
         if (mode === 'smooth') {
-          const handles = this.getSmoothHandlePoints(anchors);
+          const handles = getSmoothHandlePoints(anchors);
           h1 = handles[0];
           h2 = handles[1];
         } else {

@@ -1,9 +1,10 @@
-import { Color } from './color';
-import { Tuple2, enumerate, range } from './array';
-import { Vector3 } from './vector';
 import { ORIGIN, OUT } from '../constants';
+import { enumerate, range } from './array';
+import { Color } from './color';
 import { choose } from './math_functions.ts';
 import { MArray } from './space_ops';
+import { Tuple2 } from './tuple.ts';
+import { Vector3 } from './vector';
 
 export function interpolateColorList(
   a: Color[],
@@ -13,8 +14,8 @@ export function interpolateColorList(
   if (a.length !== b.length) {
     throw new Error('Color lists must have the same length');
   }
-  const arrayA = new MArray({ values: a.map((color) => color.toArray()) });
-  const arrayB = new MArray({ values: b.map((color) => color.toArray()) });
+  const arrayA = new MArray(a.map((color) => color.toArray()));
+  const arrayB = new MArray(b.map((color) => color.toArray()));
 
   const interpolatedArray = interpolate(arrayA, arrayB, alpha);
 
@@ -91,13 +92,11 @@ export function partialBezierPoints(
     return Array(points.length).fill(points[points.length - 1]);
   }
 
-  const aTo1 = range({ end: points.length }).map((i) =>
-    bezier(points.slice(i))(a)
-  );
+  const aTo1 = range(0, points.length).map((i) => bezier(points.slice(i))(a));
 
   const endProp = (b - a) / (1.0 - a);
 
-  return range({ end: points.length }).map((n) =>
+  return range(0, points.length).map((n) =>
     bezier(aTo1.slice(0, n + 1))(endProp)
   );
 }
@@ -142,9 +141,7 @@ export function getSmoothHandlePoints(
   const b = MArray.zeros({ shape: new Tuple2(2 * numHandles, 3) });
   const pointsWithoutFirst = points.slice(1);
 
-  for (const [i, j] of enumerate(
-    range({ start: 1, end: 2 * numHandles, step: 2 })
-  )) {
+  for (const [i, j] of enumerate(range(1, 2 * numHandles, 2))) {
     for (let k = 0; k < 3; k++) {
       b.setValue(new Tuple2(j, k), 2 * pointsWithoutFirst[i].getComponent(k));
     }
@@ -221,7 +218,7 @@ export function diagToMatrix(
       .getValues()
       .slice(Math.max(0, i - u))
       .map((line) => line.slice(Math.max(u - i, 0)));
-    const partialMatrix = new MArray({ values: partialMatrixValues });
+    const partialMatrix = new MArray(partialMatrixValues);
     const partialDiagValues = diag.getRow(i).slice(Math.max(0, u - i));
     const partialDiagMatrix = fillDiagonalWithValues(
       partialMatrix,

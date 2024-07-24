@@ -173,11 +173,11 @@ export function colorGradient(
     return [];
   }
 
-  const alphas = linspace({
-    start: 0,
-    end: referenceColors.length - 1,
-    count: outputLength,
-  }).getColumn(0);
+  const alphas = linspace(
+    0,
+    referenceColors.length - 1,
+    outputLength
+  ).getColumn(0);
 
   const floors = alphas.map(Math.floor);
   const mod1 = alphas.map((a) => a % 1);

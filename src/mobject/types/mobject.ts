@@ -3,6 +3,7 @@ import { Color } from '../../util/color';
 import { DOWN, LEFT, RIGHT, UP, WHITE } from '../../constants';
 import { ORIGIN, OUT } from '../../constants';
 import { rotationMatrix } from '../../util/space_ops';
+import { interpolateValue } from '../../util/bezier';
 
 type Updater = (mob: Mobject, dt: number) => Mobject;
 
@@ -332,6 +333,59 @@ export class Mobject {
 
   createGroup<MobjectType extends Mobject>(mobs: MobjectType[]): Mobject {
     return new Group(mobs);
+  }
+
+  fade(darkness: number = 0.5, family: boolean = true): void {
+    if (family) {
+      for (const submob of this.submobjects) {
+        submob.fade(darkness, true);
+      }
+    }
+  }
+
+  fadeTo(color: Color, alpha: number, family: boolean = true): void {
+    if (this.hasPoints()) {
+      const newColor = interpolateValue(this.getColor(), color, alpha);
+      this.setColor(newColor, false);
+    }
+
+    if (family) {
+      for (const submob of this.submobjects) {
+        submob.fadeTo(color, alpha, true);
+      }
+    }
+  }
+
+  setColor(color: Color, family: boolean = true): void {
+    if (family) {
+      for (const submob of this.submobjects) {
+        submob.setColor(color, true);
+      }
+    }
+    this.color = color;
+  }
+
+  getColor(): Color {
+    return this.color;
+  }
+
+  hasPoints(): boolean {
+    return this.points.length > 0;
+  }
+
+  getCenter(): Vector3 {
+    return this.getCriticalPoint(ORIGIN);
+  }
+
+  getCenterOfMass(): Vector3 {
+    if (this.getNumPoints() === 0) {
+      return new Vector3(0, 0, 0);
+    }
+    const sum = this.getAllPoints().reduce(
+      (a, b) => a.add(b),
+      new Vector3(0, 0, 0)
+    );
+    return sum.divide(this.getNumPoints());
   }
 }
 
