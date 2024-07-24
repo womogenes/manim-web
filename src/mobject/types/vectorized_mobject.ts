@@ -227,7 +227,7 @@ export class VMobject extends Mobject {
   setColor(color: Color, family: boolean = true): void {
     this.setFill({ colors: [color], family });
     this.setStroke({ colors: [color], family });
-    super.setColor({ color, family });
+    super.setColor(color, family);
   }
 
   getStyle(): VMobjectStyle {
@@ -240,10 +240,7 @@ export class VMobject extends Mobject {
     });
   }
 
-  matchStyle(
-    vmob: VMobject,
-    { family = true }: { family?: boolean } = {}
-  ): void {
+  matchStyle(vmob: VMobject, family: boolean = true): void {
     this.setStyleFromVMobjectStyle(vmob.getStyle(), { family: false });
 
     if (family) {
@@ -260,9 +257,10 @@ export class VMobject extends Mobject {
       submobs2 = submobs2.filter((element) => element instanceof VMobject);
 
       for (const [sm1, sm2] of makeEven(submobs1, submobs2)) {
-        (sm1 as unknown as VMobject).matchStyle(sm2 as unknown as VMobject, {
-          family: true,
-        });
+        (sm1 as unknown as VMobject).matchStyle(
+          sm2 as unknown as VMobject,
+          true
+        );
       }
     }
   }
@@ -326,9 +324,7 @@ export class VMobject extends Mobject {
     const direction = RIGHT;
     const c = this.getCenter();
 
-    const bases = new MArray({
-      values: [RIGHT.sub(c), UP.sub(c), OUT.sub(c)],
-    }).transpose();
+    const bases = new MArray([RIGHT.sub(c), UP.sub(c), OUT.sub(c)]).transpose();
 
     const offset = direction.matMul(bases);
     return [c.subtract(offset), c.add(offset)];
@@ -939,78 +935,46 @@ export class VMobject extends Mobject {
     });
   }
 
-  pointwiseBecomePartial(targetMobject: VMobject, a: number, b: number): void {
-    const targetPoints = targetMobject.points;
-
-    // To ensure that we have the same number of bezier curves:
-    const numCurves = Math.floor(targetPoints.length / 4);
-    const newNumPoints = numCurves * 4;
-    const newPoints = this.pointsFromBezierCurves(
-      this.getCubicBezierTuplesFromPoints(targetPoints.slice(0, newNumPoints)),
-      numCurves
-    );
-
-    this.applyOverAttr('points', newPoints);
-
-    if (this.getNumPoints() === 0) return;
-
-    const bezierQuads = this.getCubicBezierTuplesFromPoints(this.points);
-    const targetBezierQuads = this.getCubicBezierTuplesFromPoints(targetPoints);
-
-    const lowerIndex = Math.floor(a * bezierQuads.length);
-    const upperIndex = Math.floor(b * bezierQuads.length);
-
-    this.setPoints([]);
-
-    if (lowerIndex > upperIndex) return;
-
-    if (lowerIndex === upperIndex) {
-      this.appendPoints(
-        partialBezierPoints(
-          bezierQuads[lowerIndex].map((p) => p.toArray()) as [
-            number[],
-            number[],
-            number[],
-            number[]
-          ],
-          a % 1,
-          b % 1
-        )
-      );
+  pointwiseBecomePartial(mob: VMobject, a: number, b: number): void {
+    if (a <= 0 && b >= 1) {
+      this.setPoints(mob.getPoints());
       return;
     }
 
-    this.appendPoints(
-      partialBezierPoints(
-        bezierQuads[lowerIndex].map((p) => p.toArray()) as [
-          number[],
-          number[],
-          number[],
-          number[]
-        ],
-        a % 1,
-        1
-      )
-    );
+    const bezierQuads = mob.getCubicBezierTuples();
+    const numCubics = bezierQuads.length;
 
-    for (const quad of bezierQuads.slice(lowerIndex + 1, upperIndex)) {
-      this.appendPoints(
-        quad.map((p) => p.toArray()) as [number[], number[], number[], number[]]
-      );
+    const lower = integerInterpolate(0, numCubics, a);
+    const upper = integerInterpolate(0, numCubics, b);
+
+    const lowerIndex = lower[0];
+    const lowerResidue = lower[1];
+    const upperIndex = upper[0];
+    const upperResidue = upper[1];
+
+    this.clearPoints();
+
+    if (numCubics === 0) {
+      return;
     }
 
-    this.appendPoints(
-      partialBezierPoints(
-        bezierQuads[upperIndex].map((p) => p.toArray()) as [
-          number[],
-          number[],
-          number[],
-          number[]
-        ],
-        0,
-        b % 1
-      )
-    );
+    if (lowerIndex === upperIndex) {
+      this.appendPoints(
+        partialBezierPoints(bezierQuads[lowerIndex], lowerResidue, upperResidue)
+      );
+    } else {
+      this.appendPoints(
+        partialBezierPoints(bezierQuads[lowerIndex], lowerResidue, 1)
+      );
+
+      for (let i = lowerIndex + 1; i < upperIndex; i++) {
+        this.appendPoints(bezierQuads[i]);
+      }
+
+      this.appendPoints(
+        partialBezierPoints(bezierQuads[upperIndex], 0, upperResidue)
+      );
+    }
   }
 
   getSubcurve(a: number, b: number): VMobject {
@@ -1031,10 +995,202 @@ export class VMobject extends Mobject {
     color?: Color
   ): DashedVMobject {
     // return a dashed version of the vmobject
-    return new DashedVMobject(this, {
+    return new DashedVMobject(
+      this,
       numDashes,
       positiveSpaceRatio,
-      color: color || this.getColor(),
+      color || this.getColor()
+    );
+  }
+}
+
+class VMobjectStyle {
+  fillColors: Color[];
+  strokeColors: Color[];
+  strokeWidth: number;
+  backgroundStrokeColors: Color[];
+  backgroundStrokeWidth: number;
+
+  constructor({
+    fillColors,
+    strokeColors,
+    strokeWidth,
+    backgroundStrokeColors,
+    backgroundStrokeWidth,
+  }: {
+    fillColors: Color[];
+    strokeColors: Color[];
+    strokeWidth: number;
+    backgroundStrokeColors: Color[];
+    backgroundStrokeWidth: number;
+  }) {
+    this.fillColors = fillColors;
+    this.strokeColors = strokeColors;
+    this.strokeWidth = strokeWidth;
+    this.backgroundStrokeColors = backgroundStrokeColors;
+    this.backgroundStrokeWidth = backgroundStrokeWidth;
+  }
+
+  static copyFrom(style: VMobjectStyle): VMobjectStyle {
+    return new VMobjectStyle({
+      fillColors: style.fillColors?.map((c) => c.copy()) ?? [],
+      strokeColors: style.strokeColors?.map((c) => c.copy()) ?? [],
+      strokeWidth: style.strokeWidth,
+      backgroundStrokeColors:
+        style.backgroundStrokeColors?.map((c) => c.copy()) ?? [],
+      backgroundStrokeWidth: style.backgroundStrokeWidth,
     });
+  }
+
+  copy(): VMobjectStyle {
+    return VMobjectStyle.copyFrom(this);
+  }
+
+  withChange({
+    fillColors,
+    strokeColors,
+    strokeWidth,
+    backgroundStrokeColors,
+    backgroundStrokeWidth,
+  }: {
+    fillColors?: Color[] | null;
+    strokeColors?: Color[] | null;
+    strokeWidth?: number;
+    backgroundStrokeColors?: Color[] | null;
+    backgroundStrokeWidth?: number;
+  }): VMobjectStyle {
+    return new VMobjectStyle({
+      fillColors: fillColors ?? this.fillColors,
+      strokeColors: strokeColors ?? this.strokeColors,
+      strokeWidth: strokeWidth ?? this.strokeWidth,
+      backgroundStrokeColors:
+        backgroundStrokeColors ?? this.backgroundStrokeColors,
+      backgroundStrokeWidth:
+        backgroundStrokeWidth ?? this.backgroundStrokeWidth,
+    });
+  }
+}
+
+export class VGroup extends VMobject {
+  constructor(mobs?: VMobject[]) {
+    super();
+    this.add(mobs || []);
+  }
+
+  static copyFrom(mob: VGroup): VGroup {
+    const newGroup = super.copyFrom(mob);
+    return newGroup;
+  }
+
+  override copy(): VGroup {
+    return VGroup.copyFrom(this);
+  }
+}
+
+export class VectorizedPoint extends VMobject {
+  private artificialWidth: number;
+  private artificialHeight: number;
+
+  constructor({
+    color = WHITE,
+    location = ORIGIN,
+    strokeWidth = DEFAULT_STROKE_WIDTH,
+    artificialWidth = 0.01,
+    artificialHeight = 0.01,
+  }: {
+    color?: Color;
+    location?: Vector3;
+    strokeWidth?: number;
+    artificialWidth?: number;
+    artificialHeight?: number;
+  } = {}) {
+    super(color);
+    this.artificialWidth = artificialWidth;
+    this.artificialHeight = artificialHeight;
+    this.setPoints([location]);
+    this.strokeWidth = strokeWidth;
+  }
+
+  override getWidth(): number {
+    return this.artificialWidth;
+  }
+
+  override getHeight(): number {
+    return this.artificialHeight;
+  }
+
+  getLocation(): Vector3 {
+    return this.points[0];
+  }
+
+  setLocation(pt: Vector3): void {
+    this.setPoints([pt.copy()]);
+  }
+
+  static copyFrom(vpt: VectorizedPoint): VectorizedPoint {
+    const newPoint = super.copyFrom(vpt) as VectorizedPoint;
+    newPoint.artificialHeight = vpt.artificialHeight;
+    newPoint.artificialWidth = vpt.artificialWidth;
+    return newPoint;
+  }
+
+  override copy(): VectorizedPoint {
+    return VectorizedPoint.copyFrom(this);
+  }
+}
+
+export class CurvesAsSubmobjects extends VGroup {
+  constructor(vmob: VMobject) {
+    super();
+    const tuples = vmob.getCubicBezierTuples();
+
+    for (const tuple of tuples) {
+      const part = new VMobject();
+      part.setPoints(tuple);
+      part.matchStyle(vmob);
+      this.add([part]);
+    }
+  }
+
+  static copyFrom(mob: CurvesAsSubmobjects): CurvesAsSubmobjects {
+    return super.copyFrom(mob) as CurvesAsSubmobjects;
+  }
+
+  override copy(): CurvesAsSubmobjects {
+    return CurvesAsSubmobjects.copyFrom(this);
+  }
+}
+
+export class DashedVMobject extends VMobject {
+  constructor(
+    vmob: VMobject,
+    numDashes: number = 15,
+    positiveSpaceRatio: number = 0.5,
+    color: Color = WHITE
+  ) {
+    super(color);
+
+    if (numDashes > 0) {
+      const fullDAlpha = 1 / numDashes;
+      const partialDAlpha = fullDAlpha * positiveSpaceRatio;
+
+      const alphas = linspace(0, 1, numDashes + 1)
+        .getColumn(0)
+        .map((alpha) => alpha - fullDAlpha + partialDAlpha);
+
+      this.add(
+        alphas.map((alpha) => vmob.getSubcurve(alpha, alpha + partialDAlpha))
+      );
+    }
+
+    this.matchStyle(vmob, false);
+  }
+
+  static copyFrom(mob: DashedVMobject): DashedVMobject {
+    return super.copyFrom(mob) as DashedVMobject;
+  }
+
+  override copy(): DashedVMobject {
+    return DashedVMobject.copyFrom(this);
   }
 }

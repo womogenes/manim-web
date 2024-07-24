@@ -373,6 +373,10 @@ export class Mobject {
     return this.points.length > 0;
   }
 
+  hasNoPoints(): boolean {
+    return this.points.length === 0;
+  }
+
   getCenter(): Vector3 {
     return this.getCriticalPoint(ORIGIN);
   }
@@ -386,6 +390,31 @@ export class Mobject {
       new Vector3(0, 0, 0)
     );
     return sum.divide(this.getNumPoints());
+  }
+
+  getWidth(): number {
+    return this.lengthOverDim(0);
+  }
+
+  getHeight(): number {
+    return this.lengthOverDim(1);
+  }
+
+  getDepth(): number {
+    return this.lengthOverDim(2);
+  }
+
+  private lengthOverDim(dim: number): number {
+    const pts = this.getAllPoints();
+
+    if (pts.length === 0) {
+      return 1;
+    }
+
+    const components = pts.map((pt) => pt.getComponent(dim));
+    const minPos = Math.min(...components);
+    const maxPos = Math.max(...components);
+    return maxPos - minPos;
   }
 }
 
