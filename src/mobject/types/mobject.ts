@@ -416,6 +416,138 @@ export class Mobject {
     const maxPos = Math.max(...components);
     return maxPos - minPos;
   }
+
+  pointwiseBecomePartial(mob: Mobject, a: number, b: number): void {
+    // To be implemented in subclasses
+    throw new Error(
+      'pointwiseBecomePartial not implemented for ' + this.constructor.name
+    );
+  }
+
+  becomePartial(mob: Mobject, a: number, b: number): void {
+    // To be implemented in subclasses
+    throw new Error(
+      'becomePartial not implemented for ' + this.constructor.name
+    );
+  }
+
+  become(mob: Mobject, copySubmobjects: boolean = true): void {
+    this.alignData(mob);
+
+    const thisFamily = this.getFamily();
+    const mobFamily = mob.getFamily();
+
+    for (let i = 0; i < thisFamily.length; i++) {
+      const sm1 = thisFamily[i];
+      const sm2 = mobFamily[i];
+
+      sm1.points = [...sm2.points];
+      sm1.interpolateColor(sm1, sm2, 1);
+    }
+  }
+
+  private interpolateColor(a: Mobject, b: Mobject, alpha: number): void {
+    // To be implemented in subclasses
+  }
+
+  alignData(mob: Mobject): void {
+    this.nullPointAlign(mob);
+    this.alignSubmobjects(mob);
+    this.alignPoints(mob);
+
+    for (let i = 0; i < this.submobjects.length; i++) {
+      this.submobjects[i].alignData(mob.submobjects[i]);
+    }
+  }
+
+  private nullPointAlign(mob: Mobject): void {
+    const m1 = this;
+    const m2 = mob;
+
+    if (m1.hasNoPoints() && m2.hasPoints()) {
+      m2.pushSelfIntoSubmobjects();
+    }
+
+    if (m2.hasNoPoints() && m1.hasPoints()) {
+      m1.pushSelfIntoSubmobjects();
+    }
+  }
+
+  private alignSubmobjects(mob: Mobject): void {
+    const mob1 = this;
+    const mob2 = mob;
+
+    const n1 = mob1.submobjects.length;
+    const n2 = mob2.submobjects.length;
+
+    mob1.addNMoreSubmobjects(Math.max(0, n2 - n1));
+    mob2.addNMoreSubmobjects(Math.max(0, n1 - n2));
+  }
+
+  alignPoints(mob: Mobject): void {
+    const count1 = this.getNumPoints();
+    const count2 = mob.getNumPoints();
+
+    if (count1 < count2) {
+      this.alignPointsWithLarger(mob);
+    } else if (count1 > count2) {
+      mob.alignPointsWithLarger(this);
+    }
+  }
+
+  private pushSelfIntoSubmobjects(): void {
+    const m = this.copy();
+    m.submobjects = [];
+    this.resetPoints();
+    this.add([m]);
+  }
+
+  private addNMoreSubmobjects(n: number): void {
+    if (n === 0) {
+      return;
+    }
+
+    const current = this.submobjects.length;
+    if (current === 0) {
+      this.submobjects = Array(n)
+        .fill(null)
+        .map(() => this.getPointMobject());
+      return;
+    }
+
+    const target = current + n;
+    const repeatIndices = Array(target)
+      .fill(0)
+      .map((_, i) => Math.floor((i * current) / target));
+    const splitFactors = Array(current)
+      .fill(0)
+      .map((_, i) => repeatIndices.filter((j) => i === j).length);
+
+    const newSubmobs: Mobject[] = [];
+
+    for (let i = 0; i < current; i++) {
+      const submob = this.submobjects[i];
+      const sf = splitFactors[i];
+
+      newSubmobs.push(submob);
+
+      for (let j = 1; j < sf; j++) {
+        const copy = submob.copy();
+        copy.fade(1);
+        newSubmobs.push(copy);
+      }
+    }
+
+    this.submobjects = newSubmobs;
+  }
+
+  private alignPointsWithLarger(largerMob: Mobject): void {
+    throw new Error('Not implemented');
+  }
+
+  getPointMobject(center?: Vector3): Mobject {
+    throw new Error(`getPointMobject not implemented for ${this.getName()}`);
+  }
 }
 
 export class Group extends Mobject {

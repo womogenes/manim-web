@@ -2,9 +2,9 @@ import { Animation } from '../animation/animation';
 import { AnimationGroup } from '../animation/composition';
 import { Camera } from '../camera/camera';
 import { AbstractDisplay } from '../display/abstract_display';
-import { Mobject } from '../mobject/types/mobject';
 import { AbstractRenderer } from '../renderer/abstract_renderer';
-import { enumerate, max } from '../util/array';
+import { Mobject } from '../mobject/types/mobject';
+import { enumerate } from '../util/array';
 import { Event, EventType } from '../util/events/event';
 import { EventDispatcher } from '../util/events/event_dispatcher';
 import { EventListener } from '../util/events/event_listener';
@@ -16,14 +16,12 @@ abstract class Scene {
   randomSeed: number = 0;
 
   mobjects: Mobject[];
-  random: Random;
   camera: Camera;
   renderer: AbstractRenderer;
   display: AbstractDisplay;
 
   constructor() {
     this.camera = this.createCamera();
-    this.random = new Random(this.randomSeed);
     this.mobjects = [];
   }
 
@@ -348,4 +346,4 @@ function runScene(scene: Scene): void {
   scene.run();
 }
 
-export { Scene, EndSceneEarlyException, runScene };
+export { EndSceneEarlyException, runScene, Scene };

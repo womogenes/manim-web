@@ -19,8 +19,8 @@
 - [x] src/mobject/types/mobject.dart
 - [x] src/animation/animation.dart
 - [ ] src/mobject/types/interactive_mobject.dart
-- [ ] src/mobject/types/vectorized_mobject.dart
-- [ ] src/animation/update.dart
+- [x] src/mobject/types/vectorized_mobject.dart
+- [x] src/animation/update.dart
 - [ ] src/animation/creation.dart
 - [ ] src/camera/camera.dart
 - [ ] src/mobject/functions.dart

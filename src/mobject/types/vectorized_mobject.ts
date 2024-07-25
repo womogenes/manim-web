@@ -324,7 +324,11 @@ export class VMobject extends Mobject {
     const direction = RIGHT;
     const c = this.getCenter();
 
-    const bases = new MArray([RIGHT.sub(c), UP.sub(c), OUT.sub(c)]).transpose();
+    const bases = new MArray([
+      this.getEdgeCenter(RIGHT).subtract(c).toArray(),
+      this.getEdgeCenter(UP).subtract(c).toArray(),
+      this.getEdgeCenter(OUT).subtract(c).toArray(),
+    ]).transpose();
 
     const offset = direction.matMul(bases);
     return [c.subtract(offset), c.add(offset)];
